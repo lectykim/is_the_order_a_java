@@ -139,12 +139,74 @@ int g_timer;
 vector<RECT> g_rect_top;
 vector<RECT> g_rect_bot;
 
+//Handle Vec
+vector<HANDLE> g_handle;
+
 //현재 게임 종료 상탠지 확인
 bool g_status;
 
 //윈도우의 가로 세로 크기
 int vpWidth;
 int vpHeight;
+
+//난수 초기화
+int g_rand;
+
+//Life 
+int g_life = 3;
+
+DWORD WINAPI drawRects(LPVOID param) {
+    HWND hWnd = (HWND)param;
+    HDC hdc;
+    
+    hdc = GetDC(hWnd);
+
+
+    int height = vpHeight / 2 - 100;
+    int width = vpWidth - 100;
+
+
+    //상단 장애물 생성
+    RECT rect_top, rect_bot;
+    rect_top.left = width;
+    rect_top.right = width + 50;
+    rect_top.top = 10;
+    rect_top.bottom = g_rand % height;
+    g_rect_top.push_back(rect_top);
+
+    //하단 장애물 생성
+    rect_bot.left = width;
+    rect_bot.right = width + 50;
+    rect_bot.bottom = vpHeight - 10;
+    rect_bot.top = vpHeight - (g_rand % height) - 10;
+    g_rect_bot.push_back(rect_bot);
+
+    RECT is;
+
+        for (int i = 0; i < g_rect_top.size(); i++) {
+
+            g_rect_top[i].left -= 100;
+            g_rect_top[i].right -= 100;
+            g_rect_bot[i].left -= 100;
+            g_rect_bot[i].right -= 100;
+
+            //사각형에 겹치면,
+            if (IntersectRect(&is, &g_player, &g_rect_top[i]) || IntersectRect(&is, &g_player, &g_rect_bot[i])) 
+            {
+                g_life--;
+            }
+
+        }
+        InvalidateRect(hWnd, NULL, true);
+        Sleep(100);
+    
+
+    ReleaseDC(hWnd, hdc);
+
+    ExitThread(0);
+    return 0;
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -158,16 +220,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         g_player.left = 10;
         g_player.right = 60;
         g_player.bottom = 648;
-        g_player.top = 598;
+        g_player.top = 548;
 
         //30second동안 작성
         g_timer = 30;
         
         //시작하면 true
         g_status = true;
+
         
+        
+        //Player Gravity
         SetTimer(hWnd, 1, 200, NULL);
+
+        //제한 시간
         SetTimer(hWnd, 2, 1000,NULL);
+        
+        //블록 생성
+        SetTimer(hWnd, 3, 1000, NULL);
 
 
         
@@ -192,7 +262,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (g_player.top < 10)
             {
                 g_player.top = 10;
-                g_player.bottom = 60;
+                g_player.bottom = 110;
             }
             if (g_player.right > vpWidth-10)
             {
@@ -202,7 +272,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (g_player.bottom > vpHeight-10)
             {
                 g_player.bottom = vpHeight-10;
-                g_player.top = vpHeight-60;
+                g_player.top = vpHeight-110;
             }
 
         }
@@ -213,8 +283,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 g_status = false;
                 KillTimer(hWnd, 2);
+                KillTimer(hWnd, 1);
+                KillTimer(hWnd, 3);
                 MessageBox(hWnd, L"Game Over", L"Time Out", MB_OK);
             }
+        }
+        else if (3 == wParam)
+        {
+            DWORD tid; //Thread ID
+
+            g_rand = rand();
+
+            //쓰레드의 실행
+            g_handle.push_back(CreateThread(NULL, 0, drawRects, hWnd, 0, &tid));
+            
+            //쓰레드 실패시
+            if (g_handle.back() == NULL) {
+                MessageBox(hWnd, L"스레드 생성 실패", L"저런", MB_OK);
+                break;
+            }
+
+
         }
         InvalidateRect(hWnd, NULL, true);
     }
@@ -252,7 +341,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (g_player.top < 10)
         {
             g_player.top = 10;
-            g_player.bottom = 60;
+            g_player.bottom = 110;
         }
         if (g_player.right > vpWidth - 10)
         {
@@ -262,7 +351,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (g_player.bottom > vpHeight - 10)
         {
             g_player.bottom = vpHeight - 10;
-            g_player.top = vpHeight - 60;
+            g_player.top = vpHeight - 110;
         }
         InvalidateRect(hWnd, NULL, true);
 
@@ -304,11 +393,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //남은시간
             WCHAR word[1024];
 
-            wsprintf(word, L"남은 시간 : %d %d %d", g_timer,vpWidth,vpHeight);
+            wsprintf(word, L"남은 시간 : %d %d ", g_timer,g_life);
             //남은시간 출력
             TextOut(hdc, 1300, 300, word, wcslen(word));
             //플레이어
             Rectangle(hdc, g_player.left, g_player.top, g_player.right, g_player.bottom);
+            for (int i = 0; i < g_rect_top.size(); i++) {
+                Rectangle(hdc, g_rect_top[i].left, g_rect_top[i].top, g_rect_top[i].right, g_rect_top[i].bottom);
+            }
+            for (int i = 0; i < g_rect_bot.size(); i++) {
+                Rectangle(hdc, g_rect_bot[i].left, g_rect_bot[i].top, g_rect_bot[i].right, g_rect_bot[i].bottom);
+            }
             EndPaint(hWnd, &ps);
 
 
