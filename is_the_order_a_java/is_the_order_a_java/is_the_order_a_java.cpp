@@ -4,6 +4,12 @@
 #include "framework.h"
 #include "is_the_order_a_java.h"
 
+#include <stdlib.h>     // 랜덤 함수 사용
+#include <time.h>       // 랜덤 시드 값을 변경
+#include <vector>
+
+using namespace std;
+
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
@@ -122,26 +128,148 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 //
 
-//맵 RECT 객체
-RECT g_ground;
+
 // Player
 RECT g_player;
 
+//1분동안 작동
+int g_timer;
+
+//100개의 RECT를 만든다!
+vector<RECT> g_rect_top;
+vector<RECT> g_rect_bot;
+
+//현재 게임 종료 상탠지 확인
+bool g_status;
+
+//윈도우의 가로 세로 크기
+int vpWidth;
+int vpHeight;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
     case WM_CREATE:
     {
-        g_ground.left = 10;
-        g_ground.top = 10;
-        g_ground.right = 1270;
-        g_ground.bottom = 658;
+        srand(time(NULL));
+        //그라운드, 플레이어 초기값
+
+
         g_player.left = 10;
         g_player.right = 60;
         g_player.bottom = 648;
         g_player.top = 598;
+
+        //30second동안 작성
+        g_timer = 30;
+        
+        //시작하면 true
+        g_status = true;
+        
+        SetTimer(hWnd, 1, 200, NULL);
+        SetTimer(hWnd, 2, 1000,NULL);
+
+
+        
     }
+    break;
+    case WM_TIMER:
+    {
+        HDC hdc = GetDC(hWnd);
+        if (1 == wParam) 
+        {
+            if (g_player.bottom < vpHeight-10)
+            {
+                g_player.top += 20;
+                g_player.bottom+= 20;
+                
+            }
+            if (g_player.left < 10)
+            {
+                g_player.left = 10;
+                g_player.right = 60;
+            }
+            if (g_player.top < 10)
+            {
+                g_player.top = 10;
+                g_player.bottom = 60;
+            }
+            if (g_player.right > vpWidth-10)
+            {
+                g_player.right = vpWidth-10;
+                g_player.left = vpWidth-60;
+            }
+            if (g_player.bottom > vpHeight-10)
+            {
+                g_player.bottom = vpHeight-10;
+                g_player.top = vpHeight-60;
+            }
+
+        }
+        else if (2 == wParam)
+        {
+            g_timer--;
+            if (0 >= g_timer) 
+            {
+                g_status = false;
+                KillTimer(hWnd, 2);
+                MessageBox(hWnd, L"Game Over", L"Time Out", MB_OK);
+            }
+        }
+        InvalidateRect(hWnd, NULL, true);
+    }
+    break;
+    case WM_KEYDOWN:
+    {
+        if (!g_status)
+            break;
+
+        //이동처리
+        switch (wParam)
+        {
+        case VK_LEFT:
+            g_player.left -= 10;
+            g_player.right -= 10;
+            break;
+        case VK_RIGHT:
+            g_player.right += 10;
+            g_player.left+= 10;
+            break;
+        case VK_UP:
+            g_player.top -= 50;
+            g_player.bottom -= 50;
+            break;
+        case VK_DOWN:
+            g_player.bottom += 5;
+            g_player.top += 5;
+            break;
+        }
+        if (g_player.left < 10)
+        {
+            g_player.left = 10;
+            g_player.right = 60;
+        }
+        if (g_player.top < 10)
+        {
+            g_player.top = 10;
+            g_player.bottom = 60;
+        }
+        if (g_player.right > vpWidth - 10)
+        {
+            g_player.right = vpWidth - 10;
+            g_player.left = vpWidth - 60;
+        }
+        if (g_player.bottom > vpHeight - 10)
+        {
+            g_player.bottom = vpHeight - 10;
+            g_player.top = vpHeight - 60;
+        }
+        InvalidateRect(hWnd, NULL, true);
+
+    }
+    break;
+    
+
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -164,8 +292,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-            // 그라운드
-            Rectangle(hdc, g_ground.left, g_ground.top, g_ground.right, g_ground.bottom);
+            
+
+
+                    //윈도우 화면의 크기 구하기
+            RECT rc;
+            GetClientRect(hWnd, &rc);
+            vpWidth = rc.right - rc.left;
+            vpHeight = rc.bottom - rc.top;
+
+            //남은시간
+            WCHAR word[1024];
+
+            wsprintf(word, L"남은 시간 : %d %d %d", g_timer,vpWidth,vpHeight);
+            //남은시간 출력
+            TextOut(hdc, 1300, 300, word, wcslen(word));
+            //플레이어
             Rectangle(hdc, g_player.left, g_player.top, g_player.right, g_player.bottom);
             EndPaint(hWnd, &ps);
 
