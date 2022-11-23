@@ -178,7 +178,7 @@ DWORD WINAPI drawRects(LPVOID param) {
     rect_bot.left = width;
     rect_bot.right = width + 50;
     rect_bot.bottom = vpHeight - 10;
-    rect_bot.top = vpHeight - (g_rand % height) - 10;
+    rect_bot.top = vpHeight - (g_rand/2 % height) - 10;
     g_rect_bot.push_back(rect_bot);
 
     RECT is;
@@ -239,6 +239,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         //블록 생성
         SetTimer(hWnd, 3, 1000, NULL);
 
+        //life가 없으면 종료
+        SetTimer(hWnd, 4, 10, NULL);
+
 
         
     }
@@ -285,6 +288,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 KillTimer(hWnd, 2);
                 KillTimer(hWnd, 1);
                 KillTimer(hWnd, 3);
+                KillTimer(hWnd, 4);
                 MessageBox(hWnd, L"Game Over", L"Time Out", MB_OK);
             }
         }
@@ -304,6 +308,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
 
 
+
+
+        }
+        else if (4 == wParam) 
+        {
+            if (g_life <= 0)
+            {
+                for (int i = 0; i < g_handle.size(); i++) {
+                    SuspendThread(g_handle[i]);
+                }
+                KillTimer(hWnd, 2);
+                KillTimer(hWnd, 1);
+                KillTimer(hWnd, 3);
+                KillTimer(hWnd, 4);
+                MessageBox(hWnd, L"Game Over", L"Time Out", MB_OK);
+                g_status = false;
+            }
         }
         InvalidateRect(hWnd, NULL, true);
     }
