@@ -158,10 +158,19 @@ int g_life = 15;
 //Java, Kotlin - Life Plus;
 RECT g_java;
 int g_java_place;
+int STATUS_JAVA = 0;
+int STATUS_KOTLIN = 1;
+int g_java_status;
 
 //C,C++,C#
 RECT g_c;
 int g_c_place;
+int STATUS_C = 0;
+int STATUS_CPP = 1;
+int STATUS_CPPPP = 2;
+int g_c_status;
+
+
 
 DWORD WINAPI drawRects(LPVOID param) {
     HWND hWnd = (HWND)param;
@@ -211,6 +220,35 @@ DWORD WINAPI drawRects(LPVOID param) {
                 InvalidateRect(hWnd, NULL, true);
             }
 
+            if (IntersectRect(&is, &g_player, &g_java))
+            {
+                //Timer 추가와 위치, 이름값 재정의
+                g_timer+=5;
+                g_life += 3;
+                g_java_place = rand() % 300;
+
+                g_java.left = g_java_place;
+                g_java.right = g_java.left + 50;
+                g_java.top = g_java_place;
+                g_java.bottom = g_java.top + 50;
+
+                g_java_status = rand() % 2;
+            }
+
+            if (IntersectRect(&is, &g_player, &g_c))
+            {
+                //Timer 추가와 위치, 이름값 재정의
+                g_timer -= 5;
+                g_life -= 3;
+                g_c_place = rand() / 2 % 300;
+                g_c.left = g_c_place;
+                g_c.right = g_c.left + 50;
+                g_c.top = g_c_place;
+                g_c.bottom = g_c.top + 50;
+
+                g_c_status = rand() % 3;
+            }
+
         }
         InvalidateRect(hWnd, NULL, true);
         Sleep(100);
@@ -258,7 +296,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         g_c.top = g_c_place;
         g_c.bottom = g_c.top + 50;
 
-        
+        g_java_status = rand() % 2;
+        g_c_status = rand() % 3;
         
         
         //Player Gravity
@@ -454,12 +493,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //남은시간
             WCHAR word_life[1024];
             WCHAR word_time[1024];
-            WCHAR word_java[1024];
-            WCHAR word_c[1024];
+            WCHAR lang_c[1024];
+            WCHAR lang_java[1024];
 
+
+            //STATUS에 따른 등록
+            if (g_java_status == STATUS_JAVA) {
+                wsprintf(lang_java, L"%s", L"JAVA");
+            }
+            else if (g_java_status == STATUS_KOTLIN) {
+                wsprintf(lang_java, L"%s", L"KOTLIN");
+            }
+
+            if (g_c_status == STATUS_C) {
+                wsprintf(lang_c, L"%s", L"C");
+            }
+            else if (g_c_status == STATUS_CPP) {
+                wsprintf(lang_c, L"%s", L"C++");
+            }
+            else {
+                wsprintf(lang_c, L"%s", L"C#");
+
+            }
 
             wsprintf(word_life, L"남은 목숨 :");
             wsprintf(word_time, L"남은 시간 : ");
+            
             
             //남은시간 출력
             TextOut(hdc, 700, 150, word_life, wcslen(word_life));
@@ -487,7 +546,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             //Item 생성
             Ellipse(hdc, g_java.left, g_java.top, g_java.right, g_java.bottom);
+            TextOut(hdc, (g_java.left + g_java.right) / 2, (g_java.top + g_java.bottom) / 2,lang_java,wcslen(lang_java));
             Ellipse(hdc, g_c.left, g_c.top, g_c.right, g_c.bottom);
+            TextOut(hdc, (g_c.left + g_c.right) / 2, (g_c.top + g_c.bottom) / 2, lang_c, wcslen(lang_c));
 
             //플레이어
             Rectangle(hdc, g_player.left, g_player.top, g_player.right, g_player.bottom);
