@@ -153,7 +153,15 @@ int vpHeight;
 int g_rand;
 
 //Life 
-int g_life = 3;
+int g_life = 15;
+
+//Java, Kotlin - Life Plus;
+RECT g_java;
+int g_java_place;
+
+//C,C++,C#
+RECT g_c;
+int g_c_place;
 
 DWORD WINAPI drawRects(LPVOID param) {
     HWND hWnd = (HWND)param;
@@ -189,11 +197,18 @@ DWORD WINAPI drawRects(LPVOID param) {
             g_rect_top[i].right -= 100;
             g_rect_bot[i].left -= 100;
             g_rect_bot[i].right -= 100;
+            if (i % 4 == 0) {
+                g_rect_top[i].top += 100;
+                g_rect_top[i].bottom += 100;
+                g_rect_bot[i].top -= 100;
+                g_rect_bot[i].bottom -= 100;
+            }
 
             //사각형에 겹치면,
             if (IntersectRect(&is, &g_player, &g_rect_top[i]) || IntersectRect(&is, &g_player, &g_rect_bot[i])) 
             {
                 g_life--;
+                InvalidateRect(hWnd, NULL, true);
             }
 
         }
@@ -229,6 +244,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         g_status = true;
 
         
+        //Java,C의 위치 선정
+        g_java_place = rand() % 300;
+        g_c_place = rand() / 2 % 300;
+
+        g_java.left = g_java_place;
+        g_java.right = g_java.left + 50;
+        g_java.top = g_java_place;
+        g_java.bottom = g_java.top + 50;
+
+        g_c.left = g_c_place;
+        g_c.right = g_c.left + 50;
+        g_c.top = g_c_place;
+        g_c.bottom = g_c.top + 50;
+
+        
+        
         
         //Player Gravity
         SetTimer(hWnd, 1, 200, NULL);
@@ -237,7 +268,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         SetTimer(hWnd, 2, 1000,NULL);
         
         //블록 생성
-        SetTimer(hWnd, 3, 1000, NULL);
+        SetTimer(hWnd, 3, 500, NULL);
 
         //life가 없으면 종료
         SetTimer(hWnd, 4, 10, NULL);
@@ -405,18 +436,59 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             
 
 
-                    //윈도우 화면의 크기 구하기
+            //윈도우 화면의 크기 구하기
             RECT rc;
-            GetClientRect(hWnd, &rc);
+            //화면 전체의 크기를 구하는 함수
+            //GetClientRect(hWnd, &rc);
+
+
+            //수동 설정
+            rc.left = 10;
+            rc.right = 700;
+            rc.top = 10;
+            rc.bottom = 500;
+
             vpWidth = rc.right - rc.left;
             vpHeight = rc.bottom - rc.top;
 
             //남은시간
-            WCHAR word[1024];
+            WCHAR word_life[1024];
+            WCHAR word_time[1024];
+            WCHAR word_java[1024];
+            WCHAR word_c[1024];
 
-            wsprintf(word, L"남은 시간 : %d %d ", g_timer,g_life);
+
+            wsprintf(word_life, L"남은 목숨 :");
+            wsprintf(word_time, L"남은 시간 : ");
+            
             //남은시간 출력
-            TextOut(hdc, 1300, 300, word, wcslen(word));
+            TextOut(hdc, 700, 150, word_life, wcslen(word_life));
+
+            //남은 라이프를 그림
+            for (int i = 0; i < g_life; i++) {
+                RECT r;
+                r.left = 900 + i * 40;
+                r.right = r.left + 25;
+                r.top = 150;
+                r.bottom = 175;
+                Rectangle(hdc, r.left, r.top, r.right, r.bottom);
+            }
+
+            //시간 텍스트
+            TextOut(hdc, 700, 230, word_time, wcslen(word_time));
+
+            //시간 박스
+            RECT time_box;
+            time_box.left = 800;
+            time_box.right = 800 + 10 * g_timer;
+            time_box.top = 230;
+            time_box.bottom = 250;
+            Rectangle(hdc, time_box.left, time_box.top, time_box.right, time_box.bottom);
+
+            //Item 생성
+            Ellipse(hdc, g_java.left, g_java.top, g_java.right, g_java.bottom);
+            Ellipse(hdc, g_c.left, g_c.top, g_c.right, g_c.bottom);
+
             //플레이어
             Rectangle(hdc, g_player.left, g_player.top, g_player.right, g_player.bottom);
             for (int i = 0; i < g_rect_top.size(); i++) {
