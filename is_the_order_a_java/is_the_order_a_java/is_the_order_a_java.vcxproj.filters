@@ -45,5 +45,8 @@
     <Image Include="is_the_order_a_java.ico">
       <Filter>리소스 파일</Filter>
     </Image>
+    <Image Include="..\..\..\Thumbnail.bmp">
+      <Filter>리소스 파일</Filter>
+    </Image>
   </ItemGroup>
 </Project>

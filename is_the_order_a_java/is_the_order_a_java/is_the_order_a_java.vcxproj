@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{53d8a6cd-67a1-4c40-8ffb-8079859f271b}</ProjectGuid>
+    <ProjectGuid>{1aae8683-746b-4911-b141-2b3bebf55266}</ProjectGuid>
     <RootNamespace>istheorderajava</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -151,6 +151,7 @@
     <ResourceCompile Include="is_the_order_a_java.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\Thumbnail.bmp" />
     <Image Include="is_the_order_a_java.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
